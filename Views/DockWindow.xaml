@@ -1,0 +1,121 @@
+<Window x:Class="FileDock.Views.DockWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:FileDock.Views"
+        Title="FileDock"
+        Width="116"
+        Height="760"
+        MinWidth="96"
+        MinHeight="240"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="False"
+        WindowStyle="None"
+        Deactivated="Window_Deactivated"
+        LocationChanged="Window_LocationChanged"
+        SizeChanged="Window_SizeChanged">
+    <Grid>
+        <Border Margin="4"
+                Background="{StaticResource CanvasBrush}"
+                BorderBrush="{StaticResource HairlineBrush}"
+                BorderThickness="1"
+                CornerRadius="16"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="34" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Background="{StaticResource SurfaceSoftBrush}"
+                        CornerRadius="15,15,0,0"
+                        MouseDown="TopBar_MouseDown"
+                        MouseUp="TopBar_MouseUp">
+                    <Grid Margin="10,0,8,0">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontFamily="Georgia, Cambria, serif"
+                                   FontSize="14"
+                                   Foreground="{StaticResource InkBrush}"
+                                   Text="FileDock" />
+                        <StackPanel HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="0,0,4,0"
+                                    Click="SettingsButton_Click"
+                                    ToolTip="设置">
+                                <TextBlock Text="⚙" />
+                            </Button>
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                    Width="24"
+                                    Height="24"
+                                    Click="HideButton_Click"
+                                    ToolTip="隐藏">
+                                <TextBlock Text="−" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="1">
+                    <ScrollViewer Padding="10"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FileList}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <views:FileCard Margin="4,0,4,7"
+                                                    Entry="{Binding}"
+                                                    OpenFileCommand="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    OpenLocationCommand="{Binding DataContext.OpenLocationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CopyFileCommand="{Binding DataContext.CopyFileCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Border Margin="14"
+                            Padding="12"
+                            Background="{StaticResource SurfaceCardBrush}"
+                            BorderBrush="{StaticResource HairlineBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <Border.Style>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasFiles}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="13"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   LineHeight="20"
+                                   Text="{Binding EmptyStateText}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Height="8" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNS" MouseDown="ResizeTop_MouseDown" MouseMove="ResizeBorder_MouseMove" MouseUp="ResizeBorder_MouseUp" />
+        <Border Height="8" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNS" MouseDown="ResizeBottom_MouseDown" MouseMove="ResizeBorder_MouseMove" MouseUp="ResizeBorder_MouseUp" />
+        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" MouseDown="ResizeLeft_MouseDown" MouseMove="ResizeBorder_MouseMove" MouseUp="ResizeBorder_MouseUp" />
+        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" MouseDown="ResizeRight_MouseDown" MouseMove="ResizeBorder_MouseMove" MouseUp="ResizeBorder_MouseUp" />
+    </Grid>
+</Window>

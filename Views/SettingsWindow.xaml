@@ -1,0 +1,98 @@
+<Window x:Class="FileDock.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FileDock 设置"
+        Width="560"
+        Height="370"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None">
+    <Border Background="{StaticResource CanvasBrush}"
+            BorderBrush="{StaticResource HairlineBrush}"
+            BorderThickness="1"
+            CornerRadius="16">
+        <Grid Margin="28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="24" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="18" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" MouseDown="WindowChrome_MouseDown">
+                <StackPanel Margin="0,0,44,0">
+                    <TextBlock FontFamily="Georgia, Cambria, serif"
+                               FontSize="28"
+                               Foreground="{StaticResource InkBrush}"
+                               Text="FileDock 设置" />
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="13"
+                               Foreground="{StaticResource MutedBrush}"
+                               Text="选择一个目录，FileDock 会按修改时间展示最近项目。" />
+                </StackPanel>
+                <Button Width="30"
+                        Height="30"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Click="CloseButton_Click"
+                        Content="×"
+                        Style="{StaticResource IconButtonStyle}"
+                        ToolTip="关闭" />
+            </Grid>
+
+            <TextBlock Grid.Row="2"
+                       Margin="0,0,0,8"
+                       FontSize="13"
+                       Foreground="{StaticResource BodyBrush}"
+                       Text="监听路径" />
+
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="88" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         HorizontalScrollBarVisibility="Auto"
+                         Style="{StaticResource WarmTextBoxStyle}"
+                         Text="{Binding WatchPath, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="{Binding WatchPath}" />
+                <Button Grid.Column="2"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="BrowseButton_Click"
+                        Content="浏览" />
+            </Grid>
+
+            <StackPanel Grid.Row="6">
+                <CheckBox Margin="0,0,0,12"
+                          Content="显示文件夹"
+                          IsChecked="{Binding ShowFolders}"
+                          Style="{StaticResource WarmCheckBoxStyle}" />
+                <CheckBox Content="开机自启"
+                          IsChecked="{Binding StartWithWindows}"
+                          Style="{StaticResource WarmCheckBoxStyle}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="8"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="CancelButton_Click"
+                        Content="取消" />
+                <Button Width="88"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Click="SaveButton_Click"
+                        Content="保存" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
