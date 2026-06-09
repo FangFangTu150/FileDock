@@ -147,6 +147,13 @@ public partial class App : WpfApplication
 
     private void ToggleDock()
     {
+        if (_dockWindow?.IsVisible == true)
+        {
+            _dockWindow.Hide();
+            SaveSnapshot();
+            return;
+        }
+
         ShowDockFromTray();
     }
 

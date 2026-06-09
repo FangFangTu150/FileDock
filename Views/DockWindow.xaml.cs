@@ -3,6 +3,7 @@ using System.Windows.Input;
 using FileDock.Models;
 using FileDock.Services;
 using FileDock.ViewModels;
+using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
 using WpfPoint = System.Windows.Point;
@@ -31,6 +32,8 @@ public partial class DockWindow : Window
         _settings = settings;
 
         Loaded += (_, _) => RestoreDockBounds();
+        Closed += (_, _) => SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
     }
 
     public event EventHandler? SettingsRequested;
@@ -38,6 +41,7 @@ public partial class DockWindow : Window
     public void ShowFromTray()
     {
         Show();
+        EnsureVisibleOnAnyScreen(save: true);
         Topmost = true;
         Activate();
     }
@@ -58,8 +62,14 @@ public partial class DockWindow : Window
         Top = _settings.DockBounds.Top;
         Width = Math.Max(96, _settings.DockBounds.Width);
         Height = Math.Max(240, _settings.DockBounds.Height);
+        EnsureVisibleOnAnyScreen(save: false);
         _isRestoringBounds = false;
         SnapToNearestEdge(save: false);
+    }
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+    {
+        Dispatcher.InvokeAsync(() => EnsureVisibleOnAnyScreen(save: true));
     }
 
     private void TopBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -244,6 +254,78 @@ public partial class DockWindow : Window
         {
             PersistBounds();
         }
+    }
+
+    private void EnsureVisibleOnAnyScreen(bool save)
+    {
+        var windowRect = new Rect(Left, Top, Math.Max(MinWidth, Width), Math.Max(MinHeight, Height));
+        var areas = GetAllScreenWorkingAreasInDip().ToList();
+        if (areas.Count == 0 || areas.Any(area => area.IntersectsWith(windowRect)))
+        {
+            if (save)
+            {
+                SaveBoundsOnly();
+            }
+
+            return;
+        }
+
+        var primary = Forms.Screen.PrimaryScreen;
+        var target = primary is null ? areas[0] : ConvertWorkingAreaToDip(primary.WorkingArea);
+
+        Width = Math.Min(Math.Max(MinWidth, Width), target.Width);
+        Height = Math.Min(Math.Max(MinHeight, Height), target.Height);
+
+        switch (_settings.SnapEdge)
+        {
+            case "left":
+                Left = target.Left;
+                Top = Clamp(Top, target.Top, target.Bottom - Height);
+                break;
+            case "top":
+                Left = Clamp(Left, target.Left, target.Right - Width);
+                Top = target.Top;
+                break;
+            case "bottom":
+                Left = Clamp(Left, target.Left, target.Right - Width);
+                Top = target.Bottom - Height;
+                break;
+            default:
+                Left = target.Right - Width;
+                Top = Clamp(Top, target.Top, target.Bottom - Height);
+                break;
+        }
+
+        if (save)
+        {
+            PersistBounds();
+        }
+        else
+        {
+            SaveBoundsOnly();
+        }
+    }
+
+    private IEnumerable<Rect> GetAllScreenWorkingAreasInDip()
+    {
+        foreach (var screen in Forms.Screen.AllScreens)
+        {
+            yield return ConvertWorkingAreaToDip(screen.WorkingArea);
+        }
+    }
+
+    private Rect ConvertWorkingAreaToDip(System.Drawing.Rectangle workingArea)
+    {
+        var source = PresentationSource.FromVisual(this);
+        var fromDevice = source?.CompositionTarget?.TransformFromDevice ?? System.Windows.Media.Matrix.Identity;
+        var topLeft = fromDevice.Transform(new WpfPoint(workingArea.Left, workingArea.Top));
+        var bottomRight = fromDevice.Transform(new WpfPoint(workingArea.Right, workingArea.Bottom));
+        return new Rect(topLeft, bottomRight);
+    }
+
+    private static double Clamp(double value, double min, double max)
+    {
+        return Math.Min(Math.Max(value, min), max);
     }
 
     private Rect GetCurrentScreenWorkingAreaInDip()

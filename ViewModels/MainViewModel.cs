@@ -19,7 +19,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         FileList.CollectionChanged += OnFileListChanged;
         OpenFileCommand = new RelayCommand<FileEntry>(OpenFile, entry => entry is not null);
         OpenLocationCommand = new RelayCommand<FileEntry>(OpenLocation, entry => entry is not null);
-        CopyFileCommand = new RelayCommand<FileEntry>(CopyFile, entry => entry is not null);
+        CopyFileCommand = new ResultRelayCommand<FileEntry>(CopyFile, entry => entry is not null);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -84,43 +84,65 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private static void OpenFile(FileEntry? entry)
     {
-        if (entry is null)
+        if (entry is null || (!File.Exists(entry.FullPath) && !Directory.Exists(entry.FullPath)))
         {
             return;
         }
 
-        Process.Start(new ProcessStartInfo(entry.FullPath)
+        try
         {
-            UseShellExecute = true
-        });
+            Process.Start(new ProcessStartInfo(entry.FullPath)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // The item may have been removed or its associated app may be unavailable.
+        }
     }
 
     private static void OpenLocation(FileEntry? entry)
-    {
-        if (entry is null)
-        {
-            return;
-        }
-
-        var argument = entry.IsFolder
-            ? $"\"{entry.FullPath}\""
-            : $"/select,\"{entry.FullPath}\"";
-
-        Process.Start(new ProcessStartInfo("explorer.exe", argument)
-        {
-            UseShellExecute = true
-        });
-    }
-
-    private static void CopyFile(FileEntry? entry)
     {
         if (entry is null || (!File.Exists(entry.FullPath) && !Directory.Exists(entry.FullPath)))
         {
             return;
         }
 
-        var files = new StringCollection { entry.FullPath };
-        System.Windows.Clipboard.SetFileDropList(files);
+        try
+        {
+            var argument = entry.IsFolder
+                ? $"\"{entry.FullPath}\""
+                : $"/select,\"{entry.FullPath}\"";
+
+            Process.Start(new ProcessStartInfo("explorer.exe", argument)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Explorer can fail if the item vanishes between scan and click.
+        }
+    }
+
+    private static bool CopyFile(FileEntry? entry)
+    {
+        if (entry is null || (!File.Exists(entry.FullPath) && !Directory.Exists(entry.FullPath)))
+        {
+            return false;
+        }
+
+        try
+        {
+            var files = new StringCollection { entry.FullPath };
+            System.Windows.Clipboard.SetFileDropList(files);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void OnFileListChanged(object? sender, NotifyCollectionChangedEventArgs e)

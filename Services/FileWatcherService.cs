@@ -13,6 +13,7 @@ public sealed class FileWatcherService : IDisposable
     private readonly Dispatcher _dispatcher;
     private readonly ShellIconProvider _iconProvider;
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _iconLoadGate = new(2);
 
     private AppSettings _settings;
     private ThreadingTimer? _timer;
@@ -73,7 +74,8 @@ public sealed class FileWatcherService : IDisposable
             DisplayName = BuildDisplayName(path, isFolder),
             LastModified = lastModified,
             IsFolder = isFolder,
-            Icon = _iconProvider.GetIcon(path, isFolder)
+            Icon = _iconProvider.GetIcon(path, isFolder),
+            IsIconLoaded = true
         };
     }
 
@@ -179,40 +181,94 @@ public sealed class FileWatcherService : IDisposable
             }
         }
 
+        var existingByPath = _target.ToDictionary(item => item.FullPath, StringComparer.OrdinalIgnoreCase);
+        var indexByEntry = _target.Select((item, index) => (item, index)).ToDictionary(pair => pair.item, pair => pair.index);
+
         for (var targetIndex = 0; targetIndex < entries.Count; targetIndex++)
         {
             var incoming = entries[targetIndex];
-            var existing = _target.FirstOrDefault(item => string.Equals(item.FullPath, incoming.FullPath, StringComparison.OrdinalIgnoreCase));
-
-            if (existing is null)
+            if (!existingByPath.TryGetValue(incoming.FullPath, out var existing))
             {
-                _target.Insert(targetIndex, ToFileEntry(incoming));
+                existing = ToFileEntry(incoming);
+                _target.Insert(targetIndex, existing);
+                existingByPath[incoming.FullPath] = existing;
+                RebuildIndexMap(indexByEntry);
                 continue;
             }
 
             existing.LastModified = incoming.LastModified;
             existing.DisplayName = incoming.DisplayName;
             existing.IsFolder = incoming.IsFolder;
-            existing.Icon ??= _iconProvider.GetIcon(incoming.FullPath, incoming.IsFolder);
+            if (!existing.IsIconLoaded)
+            {
+                ScheduleIconLoad(existing);
+            }
 
-            var currentIndex = _target.IndexOf(existing);
-            if (currentIndex != targetIndex)
+            if (indexByEntry.TryGetValue(existing, out var currentIndex) && currentIndex != targetIndex)
             {
                 _target.Move(currentIndex, targetIndex);
+                RebuildIndexMap(indexByEntry);
             }
+        }
+    }
+
+    private void RebuildIndexMap(Dictionary<FileEntry, int> indexByEntry)
+    {
+        indexByEntry.Clear();
+        for (var index = 0; index < _target.Count; index++)
+        {
+            indexByEntry[_target[index]] = index;
         }
     }
 
     private FileEntry ToFileEntry(ScanEntry entry)
     {
-        return new FileEntry
+        var fileEntry = new FileEntry
         {
             FullPath = entry.FullPath,
             DisplayName = entry.DisplayName,
             LastModified = entry.LastModified,
             IsFolder = entry.IsFolder,
-            Icon = _iconProvider.GetIcon(entry.FullPath, entry.IsFolder)
+            Icon = _iconProvider.GetPlaceholderIcon(entry.IsFolder),
+            IsIconLoaded = false
         };
+        ScheduleIconLoad(fileEntry);
+        return fileEntry;
+    }
+
+    private async void ScheduleIconLoad(FileEntry entry)
+    {
+        if (_disposed || entry.IsIconLoaded)
+        {
+            return;
+        }
+
+        await _iconLoadGate.WaitAsync();
+        try
+        {
+            var icon = await _iconProvider.GetIconAsync(entry.FullPath, entry.IsFolder);
+            if (icon is null || _disposed)
+            {
+                return;
+            }
+
+            await _dispatcher.InvokeAsync(() =>
+            {
+                if (!_disposed)
+                {
+                    entry.Icon = icon;
+                    entry.IsIconLoaded = true;
+                }
+            });
+        }
+        catch
+        {
+            await _dispatcher.InvokeAsync(() => entry.IsIconLoaded = true);
+        }
+        finally
+        {
+            _iconLoadGate.Release();
+        }
     }
 
     private static string BuildDisplayName(string path, bool isFolder)

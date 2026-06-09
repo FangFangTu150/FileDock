@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -19,6 +21,8 @@ public sealed class ShellIconProvider
     private const uint FileAttributeDirectory = 0x00000010;
 
     private readonly ConcurrentDictionary<string, ImageSource> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ImageSource _filePlaceholder = CreateFallbackIcon(isFolder: false);
+    private readonly ImageSource _folderPlaceholder = CreateFallbackIcon(isFolder: true);
 
     public ImageSource? GetIcon(string path, bool isFolder)
     {
@@ -34,6 +38,29 @@ public sealed class ShellIconProvider
         }
 
         return _cache.GetOrAdd(key, _ => LoadIcon(path, isFolder));
+    }
+
+    public ImageSource GetPlaceholderIcon(bool isFolder) => isFolder ? _folderPlaceholder : _filePlaceholder;
+
+    public Task<ImageSource?> GetIconAsync(string path, bool isFolder)
+    {
+        var completion = new TaskCompletionSource<ImageSource?>();
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                completion.SetResult(GetIcon(path, isFolder));
+            }
+            catch (Exception exception)
+            {
+                completion.SetException(exception);
+            }
+        });
+
+        thread.IsBackground = true;
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        return completion.Task;
     }
 
     private static ImageSource LoadIcon(string path, bool isFolder)

@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using FileDock.Models;
+using FileDock.ViewModels;
 using WpfUserControl = System.Windows.Controls.UserControl;
 using MediaBrush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
@@ -62,8 +63,11 @@ public partial class FileCard : WpfUserControl
 
     private void CopyButton_Click(object sender, RoutedEventArgs e)
     {
-        Execute(CopyFileCommand);
-        AnimateCopySuccess();
+        if (ExecuteCopy())
+        {
+            AnimateCopySuccess();
+        }
+
         e.Handled = true;
     }
 
@@ -73,6 +77,27 @@ public partial class FileCard : WpfUserControl
         {
             command.Execute(Entry);
         }
+    }
+
+    private bool ExecuteCopy()
+    {
+        if (Entry is null || CopyFileCommand is null)
+        {
+            return false;
+        }
+
+        if (CopyFileCommand is IResultCommand<FileEntry> resultCommand)
+        {
+            return resultCommand.TryExecute(Entry);
+        }
+
+        if (!CopyFileCommand.CanExecute(Entry))
+        {
+            return false;
+        }
+
+        CopyFileCommand.Execute(Entry);
+        return true;
     }
 
     private void AnimateCopySuccess()

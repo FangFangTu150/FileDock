@@ -20,30 +20,47 @@ public sealed class SettingsService
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileDock");
 
     public string SettingsPath => Path.Combine(SettingsDirectory, "settings.json");
+    private string BackupPath => Path.Combine(SettingsDirectory, "settings.json.bak");
+    private string TempPath => Path.Combine(SettingsDirectory, "settings.json.tmp");
 
     public AppSettings Load()
     {
-        if (!File.Exists(SettingsPath))
-        {
-            return new AppSettings();
-        }
-
-        try
-        {
-            var json = File.ReadAllText(SettingsPath);
-            return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
-        }
-        catch
-        {
-            return new AppSettings();
-        }
+        return TryLoad(SettingsPath) ?? TryLoad(BackupPath) ?? new AppSettings();
     }
 
     public void Save(AppSettings settings)
     {
         Directory.CreateDirectory(SettingsDirectory);
         var json = JsonSerializer.Serialize(settings, _jsonOptions);
-        File.WriteAllText(SettingsPath, json);
+        File.WriteAllText(TempPath, json);
+
+        if (File.Exists(SettingsPath))
+        {
+            File.Replace(TempPath, SettingsPath, BackupPath, ignoreMetadataErrors: true);
+        }
+        else
+        {
+            File.Move(TempPath, SettingsPath);
+            File.Copy(SettingsPath, BackupPath, overwrite: true);
+        }
+    }
+
+    private AppSettings? TryLoad(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void ApplyStartupRegistration(bool enabled)
