@@ -68,15 +68,17 @@ public sealed class FileWatcherService : IDisposable
                 ? File.GetLastWriteTime(path)
                 : DateTime.MinValue;
 
-        return new FileEntry
+        var fileEntry = new FileEntry
         {
             FullPath = path,
             DisplayName = BuildDisplayName(path, isFolder),
             LastModified = lastModified,
             IsFolder = isFolder,
-            Icon = _iconProvider.GetIcon(path, isFolder),
-            IsIconLoaded = true
+            Icon = _iconProvider.GetPlaceholderIcon(isFolder),
+            IsIconLoaded = false
         };
+        ScheduleIconLoad(fileEntry);
+        return fileEntry;
     }
 
     private void Scan()

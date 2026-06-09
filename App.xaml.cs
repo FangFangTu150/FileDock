@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using FileDock.Models;
 using FileDock.Services;
@@ -11,7 +12,6 @@ using WpfApplication = System.Windows.Application;
 using WpfContextMenu = System.Windows.Controls.ContextMenu;
 using WpfMenuItem = System.Windows.Controls.MenuItem;
 using WpfSeparator = System.Windows.Controls.Separator;
-using MediaColor = System.Windows.Media.Color;
 
 namespace FileDock;
 
@@ -102,7 +102,7 @@ public partial class App : WpfApplication
         var icon = new TaskbarIcon
         {
             ToolTipText = "FileDock",
-            IconSource = CreateTrayImage(),
+            IconSource = CreateAppIconImage(),
             ContextMenu = CreateTrayMenu()
         };
 
@@ -131,18 +131,11 @@ public partial class App : WpfApplication
         return menu;
     }
 
-    private static ImageSource CreateTrayImage()
+    private static ImageSource CreateAppIconImage()
     {
-        var group = new DrawingGroup();
-        var coral = new SolidColorBrush(MediaColor.FromRgb(204, 120, 92));
-        var ink = new SolidColorBrush(MediaColor.FromRgb(20, 20, 19));
-        coral.Freeze();
-        ink.Freeze();
-
-        group.Children.Add(new GeometryDrawing(coral, null, new RectangleGeometry(new Rect(2, 2, 28, 28), 8, 8)));
-        group.Children.Add(new GeometryDrawing(ink, null, Geometry.Parse("M8,15 H24 V18 H8 Z M15,8 H18 V24 H15 Z")));
-        group.Freeze();
-        return new DrawingImage(group);
+        var image = new BitmapImage(new Uri("pack://application:,,,/Assets/APPlogo.ico", UriKind.Absolute));
+        image.Freeze();
+        return image;
     }
 
     private void ToggleDock()

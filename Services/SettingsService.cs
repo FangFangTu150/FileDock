@@ -30,18 +30,40 @@ public sealed class SettingsService
 
     public void Save(AppSettings settings)
     {
-        Directory.CreateDirectory(SettingsDirectory);
-        var json = JsonSerializer.Serialize(settings, _jsonOptions);
-        File.WriteAllText(TempPath, json);
+        try
+        {
+            Directory.CreateDirectory(SettingsDirectory);
+            var json = JsonSerializer.Serialize(settings, _jsonOptions);
+            File.WriteAllText(TempPath, json);
 
-        if (File.Exists(SettingsPath))
-        {
-            File.Replace(TempPath, SettingsPath, BackupPath, ignoreMetadataErrors: true);
+            if (File.Exists(SettingsPath))
+            {
+                File.Replace(TempPath, SettingsPath, BackupPath, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(TempPath, SettingsPath);
+                File.Copy(SettingsPath, BackupPath, overwrite: true);
+            }
         }
-        else
+        catch
         {
-            File.Move(TempPath, SettingsPath);
-            File.Copy(SettingsPath, BackupPath, overwrite: true);
+            TryDeleteTempFile();
+        }
+    }
+
+    private void TryDeleteTempFile()
+    {
+        try
+        {
+            if (File.Exists(TempPath))
+            {
+                File.Delete(TempPath);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only; saving settings must not crash the app.
         }
     }
 

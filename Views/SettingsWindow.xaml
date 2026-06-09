@@ -4,6 +4,7 @@
         Title="FileDock 设置"
         Width="560"
         Height="370"
+        Icon="/Assets/APPlogo.ico"
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
@@ -28,10 +29,17 @@
 
             <Grid Grid.Row="0" MouseDown="WindowChrome_MouseDown">
                 <StackPanel Margin="0,0,44,0">
-                    <TextBlock FontFamily="Georgia, Cambria, serif"
-                               FontSize="28"
-                               Foreground="{StaticResource InkBrush}"
-                               Text="FileDock 设置" />
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="28"
+                               Height="28"
+                               Margin="0,2,10,0"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Source="/Assets/APPlogo.ico" />
+                        <TextBlock FontFamily="Georgia, Cambria, serif"
+                                   FontSize="28"
+                                   Foreground="{StaticResource InkBrush}"
+                                   Text="FileDock 设置" />
+                    </StackPanel>
                     <TextBlock Margin="0,6,0,0"
                                FontSize="13"
                                Foreground="{StaticResource MutedBrush}"

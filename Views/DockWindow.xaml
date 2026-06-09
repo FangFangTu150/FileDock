@@ -5,6 +5,7 @@
         Title="FileDock"
         Width="116"
         Height="760"
+        Icon="/Assets/APPlogo.ico"
         MinWidth="96"
         MinHeight="240"
         AllowsTransparency="True"
@@ -35,11 +36,20 @@
                         MouseDown="TopBar_MouseDown"
                         MouseUp="TopBar_MouseUp">
                     <Grid Margin="10,0,8,0">
-                        <TextBlock VerticalAlignment="Center"
-                                   FontFamily="Georgia, Cambria, serif"
-                                   FontSize="14"
-                                   Foreground="{StaticResource InkBrush}"
-                                   Text="FileDock" />
+                        <StackPanel HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                            <Image Width="18"
+                                   Height="18"
+                                   Margin="0,0,6,0"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="/Assets/APPlogo.ico" />
+                            <TextBlock VerticalAlignment="Center"
+                                       FontFamily="Georgia, Cambria, serif"
+                                       FontSize="14"
+                                       Foreground="{StaticResource InkBrush}"
+                                       Text="FileDock" />
+                        </StackPanel>
                         <StackPanel HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
                                     Orientation="Horizontal">

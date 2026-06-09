@@ -9,8 +9,16 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\APPlogo.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\APPlogo.ico" />
+    <None Remove="Assets\APPlogo.png" />
+    <Resource Include="Assets\APPlogo.ico" />
+    <Resource Include="Assets\APPlogo.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
